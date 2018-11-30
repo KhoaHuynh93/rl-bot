@@ -30,3 +30,6 @@ bot.on("message", message => {
 
   commandObj(message)();
 });
+
+
+// ths iss a bs command to push and import test
