@@ -36,12 +36,6 @@ getParams = compose(
 getCmd = compose(toLowerCase, head, getParams),
 getArgs = compose(tails, getParams),
 
-// boardToField = board => ({
-//   title: `${board.board} - ${board.title}`,
-//   url: `http://boards.4channel.org/${board.board}/`
-// }),
-// oneBoard = obj => ({embed: { title: obj.title, url: obj.url }}),
-
 commandProto = curry((command, args, message) => ({
   "ping": () => {
     return message.channel.send("Ping?").then(pingTest(message)).catch(console.error)
@@ -55,9 +49,7 @@ commandProto = curry((command, args, message) => ({
     return message.channel.send(`${command} => ${args.join('--')}${emoji}`)
   },
   "<:thinkingakari:408618297047777280>": () => {
-    // var emoji = getEmoji(message.guild, "saberChan");
     var allEmoji = message.guild.emojis.array();
-    // console.log(emoji);
     return message.channel.send(`${allEmoji.join("-")}`);
   },
   "4chan": () => { 
