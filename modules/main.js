@@ -5,7 +5,7 @@ config = require('../config.json'),
 helpCommand = require('../constants/help.json'),
 Discord = require('discord.js'),
 { listBoard } = require('../modules/Fourchan-module.js'),
-      
+
 trace = curry((msg, xs) => {
   console.log(msg, xs);
   return xs;
@@ -35,12 +35,6 @@ getParams = compose(
 ),
 getCmd = compose(toLowerCase, head, getParams),
 getArgs = compose(tails, getParams),
-
-// boardToField = board => ({
-//   title: `${board.board} - ${board.title}`,
-//   url: `http://boards.4channel.org/${board.board}/`
-// }),
-// oneBoard = obj => ({embed: { title: obj.title, url: obj.url }}),
 
 commandProto = curry((command, args, message) => ({
   "ping": () => {
