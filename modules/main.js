@@ -49,9 +49,7 @@ commandProto = curry((command, args, message) => ({
     return message.channel.send(`${command} => ${args.join('--')}${emoji}`)
   },
   "<:thinkingakari:408618297047777280>": () => {
-    // var emoji = getEmoji(message.guild, "saberChan");
     var allEmoji = message.guild.emojis.array();
-    // console.log(emoji);
     return message.channel.send(`${allEmoji.join("-")}`);
   },
   "4chan": () => { 
