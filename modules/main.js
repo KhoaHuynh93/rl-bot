@@ -5,7 +5,7 @@ config = require('../config.json'),
 helpCommand = require('../constants/help.json'),
 Discord = require('discord.js'),
 { listBoard } = require('../modules/Fourchan-module.js'),
-      
+
 trace = curry((msg, xs) => {
   console.log(msg, xs);
   return xs;
