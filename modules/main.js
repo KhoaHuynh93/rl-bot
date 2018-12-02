@@ -35,6 +35,27 @@ getParams = compose(
 ),
 getCmd = compose(toLowerCase, head, getParams),
 getArgs = compose(tails, getParams),
+display4chanBoards = (message) => {
+  listBoard
+      .map(prop('boards'))
+      .map(map(board => ({ 
+        'name': `${board.board} - ${board.title}`,
+        'value': `http://boards.4channel.org/${board.board}/`
+      })))
+      .fork(console.error, data => {
+        var max = 25;
+        message.channel.send("Here, your list of 4chan boards.");
+        while(data.length > 0) {
+          var realFields = data.length >= max ? max : data.length;
+          var sendBlock = data.splice(0, realFields);
+          
+          var embed = new Discord.RichEmbed();
+          sendBlock.forEach(item => embed.addField(item.name, item.value, false));
+          
+          message.channel.send(embed);
+        }
+      })  
+},
 
 commandProto = curry((command, args, message) => ({
   "ping": () => {
@@ -53,26 +74,19 @@ commandProto = curry((command, args, message) => ({
     return message.channel.send(`${allEmoji.join("-")}`);
   },
   "4chan": () => { 
-    listBoard
-      .map(prop('boards'))
-      .map(map(board => ({ 
-        'name': `${board.board} - ${board.title}`,
-        'value': `http://boards.4channel.org/${board.board}/`
-      })))
-      .fork(console.error, data => {
-        var max = 25;
-        message.channel.send("Here, your list of 4chan boards.");
-        while(data.length > 0) {
-          var realFields = data.length >= max ? max : data.length;
-          var sendBlock = data.splice(0, realFields);
-          
-          var embed = new Discord.RichEmbed();
-          sendBlock.forEach(item => embed.addField(item.name, item.value, false));
-          
-          message.channel.send(embed);
-        }
-      })
-     }
+    if(!args[0]) {
+      return message.channel.send(`${message.member}, what are you looking for?`);
+    }
+    
+    switch(args[0].toLowerCase()) {
+      case 'boards':
+        display4chanBoards(message);
+        break
+      default:
+        var emoji = getEmoji(message.guild, "thinkingAkari");
+        return message.channel.send(`${message.member}, command not found. Read the faq (we have a FAQ, doesn't we... ${emoji})?`);
+    }   
+  }
 })[command] || (() => {
   // console.log(command);
   var emoji = getEmoji(message.guild, "ShallAngry");
