@@ -1,6 +1,9 @@
 const
 https = require('https'),
 { Task } = require('../modules/fp.module.js'),
+getListingEndpoint = (board, type) => `https://a.4cdn.org/${board}/${type}.json`,
+getThreadEndpointByBoard = (board) => getListingEndpoint(board, 'threads'),
+getCatalogEndpointByBoard = (board) => getListingEndpoint(board, 'catalog'),
 // wrap the http call in Task model for easy future use:
 httpGetTask = url => new Task((reject, result) => {
   https.get(url, resp => {
@@ -9,7 +12,10 @@ httpGetTask = url => new Task((reject, result) => {
     resp.on('end', () => result(JSON.parse(data)));
   }).on("error", reject);
 });
-const listBoard = httpGetTask('https://a.4cdn.org/boards.json');
+const listBoard = httpGetTask('https://a.4cdn.org/boards.json'),
+listThreadByBoard = board => httpGetTask(getThreadEndpointByBoard(board)),
+listCatalogByBoard = board => httpGetTask(getCatalogEndpointByBoard(board));
+      
 module.exports = { listBoard }
 
 // usage sample:
