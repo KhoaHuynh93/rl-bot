@@ -1,6 +1,6 @@
 // TODO: message.channel.send <----- i sense something here
 const
-{ compose, curry, head, toLowerCase, prop, map, join, forEach } = require('../modules/fp.module.js'),
+{ compose, curry, head, toLowerCase, prop, map, join, forEach, toString } = require('../modules/fp.module.js'),
 config = require('../config.json'),
 helpCommand = require('../constants/help.json'),
 Discord = require('discord.js'),
@@ -66,6 +66,9 @@ commandProto = curry((command, args, message) => ({
     message.channel.send(`${allEmoji.join("-")}`);
     message.channel.send(embed);
     return;
+  },
+  "msgdelete" : () => {
+    return message.channel.bulkDelete(100, true);
   },
   "4chan": () => { 
     if(!args[0]) {
