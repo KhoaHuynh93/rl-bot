@@ -1,5 +1,6 @@
 {
   "Ping": "!ping // Ping me",
-  "Help": "!help // Show list of command",
-  "4chan": "!4chan // List all boards"
+  "4chan boards": "!4chan boards// List all boards",
+  "4chan view <boardname>": "!4chan view <boardname> list out first 15 threads in <boardname>. I.E: !4chan view a",
+  "Help": "!help // Show list of command"
 }
