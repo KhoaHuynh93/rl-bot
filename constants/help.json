@@ -2,5 +2,8 @@
   "Ping": "!ping // Ping me",
   "4chan boards": "!4chan boards// List all boards",
   "4chan view <boardname>": "!4chan view <boardname> list out first 15 threads in <boardname>. I.E: !4chan view a",
-  "Help": "!help // Show list of command"
+  "Help": "!help // Show list of command",
+  "msgdelete": "delete 100 messages",
+  "weather <null OR any || forecast>": "show current weather or forecast for the next 7 days",
+  "news <news source>": "View lastest news from sources"
 }

@@ -1,7 +1,8 @@
 const
 compose = (...fns) => (...args) => fns.reduceRight((res, fn) => [fn.call(null, ...res)], args)[0],
-curry = (fn) => { const arity = fn.length; return function _curry(...args) { if (args.length < arity) { return _curry.bind(null, ...args); } return fn.call(null, ...args); }; };
-	
+pipe = (...fns) => (...args) => fns.reduce((res, fn) => [fn.call(null, ...res)], args)[0],
+curry = (fn) => { const arity = fn.length; return function _curry(...args) { if (args.length < arity) { return _curry.bind(null, ...args); } return fn.call(null, ...args); }; },
+inspect = (x) => { if (x && typeof x.inspect === 'function') { return x.inspect(); } function inspectFn(f) { return f.name ? f.name : f.toString(); } function inspectTerm(t) { switch (typeof t) { case 'string': return `'${t}'`; case 'object': { const ts = Object.keys(t).map(k => [k, inspect(t[k])]); return `{${ts.map(kv => kv.join(': ')).join(', ')}}`; } default: return String(t); } } function inspectArgs(args) { return Array.isArray(args) ? `[${args.map(inspect).join(', ')}]` : inspectTerm(args); } return (typeof x === 'function') ? inspectFn(x) : inspectArgs(x); };
 class Either {
 	constructor (x) { this.$value = x; }
 	static of (x) { return new Right(x); }
@@ -105,7 +106,7 @@ intercalate = curry((str, xs) => xs.join(str)),
 join = m => m.join(),
 last = xs => xs[xs.length - 1],
 map = curry((fn, f) => f.map(fn)),
-composeMap = compose(map, compose),
+lineMap = compose(map, compose),
 match = curry((re, str) => re.test(str)),
 prop = curry((p, obj) => obj[p]),
 reduce = curry((fn, zero, xs) => xs.reduce(fn, zero)),
@@ -125,34 +126,7 @@ traverse = curry((of, fn, f) => f.traverse(of, fn)),
 unsafePerformIO = io => io.unsafePerformIO(),
 either = curry((f, g, e) => { if (e.isLeft) { return f(e.$value); } return g(e.$value); }),
 identity = x => x,
-inspect = (x) => {
-  if (x && typeof x.inspect === 'function') {
-    return x.inspect();
-  }
 
-  function inspectFn(f) {
-    return f.name ? f.name : f.toString();
-  }
-
-  function inspectTerm(t) {
-    switch (typeof t) {
-      case 'string':
-        return `'${t}'`;
-      case 'object': {
-        const ts = Object.keys(t).map(k => [k, inspect(t[k])]);
-        return `{${ts.map(kv => kv.join(': ')).join(', ')}}`;
-      }
-      default:
-        return String(t);
-    }
-  }
-
-  function inspectArgs(args) {
-    return Array.isArray(args) ? `[${args.map(inspect).join(', ')}]` : inspectTerm(args);
-  }
-
-  return (typeof x === 'function') ? inspectFn(x) : inspectArgs(x);
-},
 left = a => new Left(a),
 liftA2 = curry((fn, a1, a2) => a1.map(fn).ap(a2)),
 liftA3 = curry((fn, a1, a2, a3) => a1.map(fn).ap(a2).ap(a3)),
@@ -169,6 +143,7 @@ createCompose = curry((F, G) => class Compose {
 
 module.exports = {
   compose,
+  pipe,
   curry,
   add,
   mult,
@@ -183,7 +158,7 @@ module.exports = {
   join,
   last,
   map,
-  composeMap,
+  lineMap,
   match,
   prop,
   reduce,
