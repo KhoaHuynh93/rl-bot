@@ -2,7 +2,7 @@
   "//1": "describes your app and its dependencies",
   "//2": "https://docs.npmjs.com/files/package.json",
   "//3": "updating this file will download and update your packages",
-  "name": "hello-sqlite",
+  "name": "rl-bot",
   "version": "0.0.2",
   "description": "A simple Node app with SQLite as a database management system, instantly up and running.",
   "main": "server.js",
@@ -10,10 +10,15 @@
     "start": "node bot.js"
   },
   "dependencies": {
-    "express": "^4.16.3",
-    "sqlite3": "^4.0.0",
+    "express": "^4.16.4",
+    "sqlite3": "^4.1.0",
     "discord": "^0.8.2",
-    "discord.js": "^11.4.2"
+    "discord.js": "^11.5.1",
+    "feed-to-json-promise": "^1.8.2",
+    "ytdl": "^0.13.1",
+    "ytdl-core": "^0.29.7",
+    "node-opus": "^0.3.2",
+    "fs-extra": "^8.1.0"
   },
   "engines": {
     "node": "8.4.0"

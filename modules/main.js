@@ -1,97 +1,160 @@
 // TODO: message.channel.send <----- i sense something here
 const
-{ compose, curry, head, toLowerCase, prop, map, join, forEach } = require('../modules/fp.module.js'),
+{ compose, curry, head, toLowerCase, prop, map, join, forEach, toString } = require('../modules/fp.module.js'),
 config = require('../config.json'),
 helpCommand = require('../constants/help.json'),
+vneFeedConst = require('../constants/vneFeedConst.json'),
 Discord = require('discord.js'),
-{ listBoard } = require('../modules/Fourchan-module.js'),
-
-trace = curry((msg, xs) => {
-  console.log(msg, xs);
-  return xs;
-}),
+{ listBoard, listCatalogByBoard, fork4chan } = require('../modules/Fourchan-module.js'),
+{ forkWeatherCurrent, forkWeatherForecast } = require('../modules/Weather-module.js'),
+{ forkVnExpress, forkHackernews, forkGematsu } = require('./rss-module.js'),
+{ Music } = require('./music-module.js'),
+equalPlain = curry((name, e) =>  e.name.toLowerCase() === name.toLowerCase()),
 slice = curry((l, xs) => xs.slice(l)),
 split = curry((l, xs) => xs.split(l)),
-tails = array => array.slice(1, array.length), // tails: Array -> Array - remove 0th position
-
-getEmoji = (server, name) => server.emojis.filter(emoji => {
-  return emoji.name.toLowerCase() === name.toLowerCase()
-}).first(),
-
+tails = array => array.slice(1, array.length),
+getEmoji = (server, name) => server.emojis.filter(equalPlain(name)).first(), 
 bot = new Discord.Client(),
+pingTest = curry((message, m) => m.edit(`Pong! Hello ${m.author.username}`)),
+getParams = compose( split(/ +/g), slice(config.prefix.length), toLowerCase, prop('content') ),
+getCmd = compose(head, getParams),
+getArgs = compose(tails, getParams),
 
-pingTest = curry((message, m) => {
-  if(!message.channel.parent) {
-    m.edit(`Pong! Hello ${m.author.username}`);
-  } else {
-    m.edit(`Pong! Latency is ${m.createdTimestamp - message.createdTimestamp}ms. API Latency is ${Math.round(bot.ping)}ms\nGot ping by ${message.member.nickname || message.member.user.username}`);
-  } 
+// start with isolating out every functions in this switch
+cmdDefault = mes => () => {
+  try {
+    var emoji = getEmoji(mes.guild, "ShallAngry");
+    return mes.channel.send(`${mes.member}, don't say non-sense gibberish! ${emoji}`);
+  } catch (e) {
+    console.log(e);
+    return mes.channel.send(`I can't send emoji here!`);
+  }
+},
+cmdPing = mes => () => mes.channel.send("Ping?").then(pingTest(mes)).catch(console.error),
+cmdHelp = mes => () => mes.channel.send("```json\n"+JSON.stringify(helpCommand, null, 2)+"```"),
+cmdTest = curry((command, args, mes) => () => {
+  var emoji = getEmoji(mes.guild, "thinkingAkari");
+  return mes.channel.send(`${command} => ${args.join('--')}${emoji}`);
+}),
+cmdDelete = mes => () => mes.channel.bulkDelete(100, true),
+cmd4chan = curry((args, mes) => () => { 
+  if (mes.channel.name !== "command_4chan") {
+    var emoji = getEmoji(mes.guild, "bakabaka");
+    mes.channel.send(`${mes.member}, use the right channel baka!!!`);
+    mes.channel.send(emoji);
+    return;
+  }  
+  if (!args[0]) {
+    return mes.channel.send(`${mes.member}, what are you looking for?`);
+  }
+
+  switch(args[0]) {
+    case 'boards':
+      fork4chan(mes)(listBoard)
+      break;
+    case 'view':
+      if (!args[1]) {
+        return mes.channel.send(`${mes.member}, please enter a board name!`)
+      }
+      fork4chan(mes)(listCatalogByBoard(args[1]));
+      break;
+    default:
+      var emoji = getEmoji(mes.guild, "thinkingAkari");
+      return mes.channel.send(`${mes.member}, command not found. Read the faq (we have a FAQ, don't we... ${emoji})? Oh, that's right, no we don't.`);
+  }   
+}),
+cmdWeather = curry((args, mes) => () => {
+  switch (args[0]) {
+    case 'forecast':
+      forkWeatherForecast(mes)(args[1]);
+      break;
+    default: 
+      forkWeatherCurrent(mes);
+      break;
+  }
+}),
+cmdNews = curry((args, mes) => () => {
+  if (!args[0]) {
+    mes.channel.send('Please select a news channel');
+    mes.channel.send('```vnexpress | hackernews | gematsu```');
+    return;
+  }
+
+  switch (args[0]) {
+    case "vnexpress": {
+      if (vneFeedConst.AvailableType.indexOf(args[1] || '') === -1) {
+        mes.channel.send(`Put in the correct feed type!!! Here:`);
+        mes.channel.send("```" + vneFeedConst.AvailableType.join(' | ') + "```");
+        break;
+      }
+
+      forkVnExpress(args[1])(mes);
+      break;
+    }
+    case "hackernews":
+      forkHackernews(mes);
+      break;
+    case "gematsu":
+      forkGematsu(mes);
+      break;
+    default :
+      mes.channel.send('Please select a CORRECT news channel');
+      mes.channel.send('```vnexpress | hackernews | gematsu```');
+      break;
+  }
+}),
+cmdMusic = curry((args, mes) => () => {
+  if(!args[0]) {
+    mes.channel.send('What do you want?');
+  }
+  
+  switch (args[0]) {
+    case "connect": {
+      Music.connect(mes);
+      break;
+    }
+    case "add": {
+      Music.add(mes, args[1]);
+      break;
+    }
+    case "play": {
+      Music.play(mes, args[1]);
+      break;
+    }
+    case "list": {
+      Music.list(mes);
+      break;
+    }
+    case "disconnect": {
+      Music.disconnect(mes);
+      break;
+    }
+    case "volume": {
+      Music.volume(mes, args[1]);
+      break;
+    }
+    case "end": {
+      Music.end(mes);
+      break;
+    }
+  }
 }),
 
-getParams = compose(
-  split(/ +/g),
-  slice(config.prefix.length),
-  prop('content')
-),
-getCmd = compose(toLowerCase, head, getParams),
-getArgs = compose(tails, getParams),
-display4chanBoards = (message) => {
-  listBoard
-      .map(prop('boards'))
-      .map(map(board => ({ 
-        'name': `${board.board} - ${board.title}`,
-        'value': `http://boards.4channel.org/${board.board}/`
-      })))
-      .fork(console.error, data => {
-        var max = 25;
-        message.channel.send("Here, your list of 4chan boards.");
-        while(data.length > 0) {
-          var realFields = data.length >= max ? max : data.length;
-          var sendBlock = data.splice(0, realFields);
-          
-          var embed = new Discord.RichEmbed();
-          sendBlock.forEach(item => embed.addField(item.name, item.value, false));
-          
-          message.channel.send(embed);
-        }
-      })  
-},
+// old commandProto      
+commandProto = curry((command, args, mes) => ({
+  "ping": cmdPing(mes),
+  "help": cmdHelp(mes),
+  "test": cmdTest(command, args, mes),
+  "msgdelete": cmdDelete(mes),
+  "4chan": cmd4chan(args, mes),
+  "weather": cmdWeather(args, mes),
+  "news" : cmdNews(args, mes),
+  "music": cmdMusic(args, mes)
+})[command] || cmdDefault(mes)),
 
-commandProto = curry((command, args, message) => ({
-  "ping": () => {
-    return message.channel.send("Ping?").then(pingTest(message)).catch(console.error)
-  },
-  "help": () => {
-    return message.channel.send("```"+JSON.stringify(helpCommand, null, 2)+"```")
-  },
-  "test": () => {
-    var emoji = getEmoji(message.guild, "thinkingAkari");
-    
-    return message.channel.send(`${command} => ${args.join('--')}${emoji}`)
-  },
-  "<:thinkingakari:408618297047777280>": () => {
-    var allEmoji = message.guild.emojis.array();
-    return message.channel.send(`${allEmoji.join("-")}`);
-  },
-  "4chan": () => { 
-    if(!args[0]) {
-      return message.channel.send(`${message.member}, what are you looking for?`);
-    }
-    
-    switch(args[0].toLowerCase()) {
-      case 'boards':
-        display4chanBoards(message);
-        break
-      default:
-        var emoji = getEmoji(message.guild, "thinkingAkari");
-        return message.channel.send(`${message.member}, command not found. Read the faq (we have a FAQ, doesn't we... ${emoji})?`);
-    }   
-  }
-})[command] || (() => {
-  // console.log(command);
-  var emoji = getEmoji(message.guild, "ShallAngry");
-  return message.channel.send(`${message.member}, don't say non-sense gibberish! ${emoji}`);
-})),
 commandObj = mes => commandProto(getCmd(mes), getArgs(mes), mes);
 
-module.exports = { commandObj, bot }
+module.exports = { 
+  commandObj,
+  bot
+}
